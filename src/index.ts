@@ -42,11 +42,60 @@ import { join } from "node:path";
 //   }
 // );
 
+// Reading HTml Templetes
+type Product = {
+  id: Number;
+  productName: string;
+  image: string;
+  from: string;
+  nutrients: string;
+  quantity: string;
+  price: Number;
+  organic: Boolean;
+  description: string;
+};
+
+const Data = fs.readFileSync(
+  join(process.cwd(), "/dev-data/data.json"),
+  "utf-8"
+);
+const JsonData: Product[] = JSON.parse(Data);
+
+const Overview = fs.readFileSync(
+  join(process.cwd(), "/templates/overview.html"),
+  "utf-8"
+);
+
+const figure = fs.readFileSync(
+  join(process.cwd(), "/templates/figure.html"),
+  "utf-8"
+);
+
+const figureHtml = JsonData.map((ele) => {
+  let template = figure;
+  // console.log(template);
+  template = template.replace("{%IMAGE%}", ele.image);
+  template = template.replace("{%IMAGE%}", ele.image);
+  template = template.replace("{%PRODUCTNAME%}", ele.productName);
+  template = template.replace("{%ORGANIC%}", ele.organic ? "not-organic" : "");
+  template = template.replace("{%QUANTITY%}", ele.quantity);
+  template = template.replace("{%PRICE%}", ele.price + "");
+  template = template.replace("{%ID%}", ele.id + "");
+  // console.log(template);
+  return template;
+});
+// const figure = fs.readFileSync(
+//   join(process.cwd(), "/templates/figure.html"),
+//   "utf-8"
+// );
+
 //  For creating Basic Server
 const server = http.createServer(
   (req: http.IncomingMessage, res: http.ServerResponse) => {
-    let URL: string = req.url!;
-    URL = URL.substring(1, URL.length);
+    let Url = req.url;
+    // const myUrl = new URL(Url);
+    // console.log(myUrl);
+
     res.writeHead(200, "Hello World Hashib", {
       "Content-Type": "text/html",
     });
@@ -55,8 +104,16 @@ const server = http.createServer(
     // <h1>Hello Saba</h1>
     // <script>console.log("req")</script>
     // `);
-
-    if (URL === "api") {
+    console.log(Url);
+    if (Url === "/product") {
+      res.end("product page");
+    } else if (Url === "/overview") {
+      const overviewPage = Overview.replace(
+        "{%PRODUCTOVERVIEW %}",
+        figureHtml.join("")
+      );
+      res.end(overviewPage);
+    } else if (Url === "api") {
       fs.readFile(
         join(process.cwd(), "/dev-data/data.json"),
         "utf-8",
