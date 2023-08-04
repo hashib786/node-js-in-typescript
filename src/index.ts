@@ -1,7 +1,6 @@
 import http from "node:http";
-import { URL } from "node:url";
-// import fs from "node:fs";
-// import { join } from "node:path";
+import fs from "node:fs";
+import { join } from "node:path";
 
 // console.log("first");
 // const hello: string = "Hello";
@@ -35,18 +34,49 @@ import { URL } from "node:url";
 // fs.exists(join(process.cwd(), "/txt/final.txt"), (exist) => {
 //   console.log(exist);
 // });
+// fs.readFile(
+//   join(process.cwd(), "/dev-data/data.json"),
+//   "utf-8",
+//   (err, data) => {
+//     err ? console.log(err) : console.log(data);
+//   }
+// );
 
 //  For creating Basic Server
 const server = http.createServer(
   (req: http.IncomingMessage, res: http.ServerResponse) => {
+    let URL: string = req.url!;
+    URL = URL.substring(1, URL.length);
     res.writeHead(200, "Hello World Hashib", {
       "Content-Type": "text/html",
     });
     // console.log(req);
-    res.end(`
-    <h1>Hello Saba</h1>
-    <script>console.log("req")</script>
-    `);
+    // res.end(`
+    // <h1>Hello Saba</h1>
+    // <script>console.log("req")</script>
+    // `);
+
+    if (URL === "api") {
+      fs.readFile(
+        join(process.cwd(), "/dev-data/data.json"),
+        "utf-8",
+        (err, data) => {
+          if (err) res.end(err);
+          else {
+            const json = JSON.parse(data);
+            res.end(`
+            <h1>Hello Hashib </h1>
+            <script>console.log(${data})</script>
+            `);
+          }
+        }
+      );
+    } else {
+      res.end(`
+      <h1>Hello Saba</h1>
+      <script>console.log("req")</script>
+      `);
+    }
 
     // Overview page
     // if (pathname === '/' || pathname === '/overview') {
