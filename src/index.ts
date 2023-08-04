@@ -1,6 +1,7 @@
 import http from "node:http";
 import fs from "node:fs";
 import { join } from "node:path";
+import url from "node:url";
 
 // console.log("first");
 // const hello: string = "Hello";
@@ -71,19 +72,38 @@ const figure = fs.readFileSync(
   "utf-8"
 );
 
-const figureHtml = JsonData.map((ele) => {
-  let template = figure;
-  // console.log(template);
-  template = template.replace("{%IMAGE%}", ele.image);
-  template = template.replace("{%IMAGE%}", ele.image);
-  template = template.replace("{%PRODUCTNAME%}", ele.productName);
-  template = template.replace("{%ORGANIC%}", ele.organic ? "not-organic" : "");
-  template = template.replace("{%QUANTITY%}", ele.quantity);
-  template = template.replace("{%PRICE%}", ele.price + "");
-  template = template.replace("{%ID%}", ele.id + "");
-  // console.log(template);
+const productHTML = fs.readFileSync(
+  join(process.cwd(), "/templates/product.html"),
+  "utf-8"
+);
+
+const templateFunction = (template: string, data: Product): string => {
+  template = template.replace(/{%IMAGE%}/g, data.image);
+  template = template.replace("{%PRODUCTNAME%}", data.productName);
+  template = template.replace("{%ORGANIC%}", data.organic ? "not-organic" : "");
+  template = template.replace("{%QUANTITY%}", data.quantity);
+  template = template.replace("{%PRICE%}", data.price + "");
+  template = template.replace("{%ID%}", data.id + "");
+  template = template.replace("{%FROM%}", data.from);
+  template = template.replace("{%NUTRICIAN%}", data.nutrients);
   return template;
-});
+};
+
+// const figureHtml = JsonData.map((ele) => {
+//   let template = figure;
+//   // console.log(template);
+// template = template.replace("{%IMAGE%}", ele.image);
+// template = template.replace("{%IMAGE%}", ele.image);
+// template = template.replace("{%PRODUCTNAME%}", ele.productName);
+// template = template.replace("{%ORGANIC%}", ele.organic ? "not-organic" : "");
+// template = template.replace("{%QUANTITY%}", ele.quantity);
+// template = template.replace("{%PRICE%}", ele.price + "");
+// template = template.replace("{%ID%}", ele.id + "");
+// // console.log(template);
+// return template;
+// });
+
+const figureHtml = JsonData.map((ele) => templateFunction(figure, ele));
 // const figure = fs.readFileSync(
 //   join(process.cwd(), "/templates/figure.html"),
 //   "utf-8"
@@ -92,9 +112,7 @@ const figureHtml = JsonData.map((ele) => {
 //  For creating Basic Server
 const server = http.createServer(
   (req: http.IncomingMessage, res: http.ServerResponse) => {
-    let Url = req.url;
-    // const myUrl = new URL(Url);
-    // console.log(myUrl);
+    let { pathname, query } = url.parse(req.url!, true);
 
     res.writeHead(200, "Hello World Hashib", {
       "Content-Type": "text/html",
@@ -104,16 +122,23 @@ const server = http.createServer(
     // <h1>Hello Saba</h1>
     // <script>console.log("req")</script>
     // `);
-    console.log(Url);
-    if (Url === "/product") {
-      res.end("product page");
-    } else if (Url === "/overview") {
+    console.log(pathname);
+    if (pathname === "/product") {
+      if (typeof query.id === "string") {
+        let idNum = parseInt(query.id);
+        if (idNum >= JsonData.length) res.end("<h1> Page not found</h1>");
+        else {
+          const renderHtml = templateFunction(productHTML, JsonData[idNum]);
+          res.end(renderHtml);
+        }
+      } else res.end("<h1> Page not found</h1>");
+    } else if (pathname === "/overview") {
       const overviewPage = Overview.replace(
         "{%PRODUCTOVERVIEW %}",
         figureHtml.join("")
       );
       res.end(overviewPage);
-    } else if (Url === "api") {
+    } else if (pathname === "api") {
       fs.readFile(
         join(process.cwd(), "/dev-data/data.json"),
         "utf-8",
@@ -129,10 +154,7 @@ const server = http.createServer(
         }
       );
     } else {
-      res.end(`
-      <h1>Hello Saba</h1>
-      <script>console.log("req")</script>
-      `);
+      res.end("<h1> Page not found</h1>");
     }
 
     // Overview page
